@@ -793,6 +793,19 @@ type buildListenerOpts struct {
 	tlsMultiplexed  bool
 }
 
+func envDuration(env string, def time.Duration) time.Duration {
+	envVal := os.Getenv(env)
+	if envVal == "" {
+		return def
+	}
+	d, err := time.ParseDuration(envVal)
+	if err != nil {
+		log.Warnf("Invalid value %s %s %v", env, envVal, err)
+		return def
+	}
+	return d
+}
+
 func buildHTTPConnectionManager(env *model.Environment, node *model.Proxy, httpOpts *httpListenerOpts,
 	httpFilters []*http_conn.HttpFilter) *http_conn.HttpConnectionManager {
 	filters := append(httpFilters,
@@ -816,7 +829,8 @@ func buildHTTPConnectionManager(env *model.Environment, node *model.Proxy, httpO
 		// Allow websocket upgrades
 		websocketUpgrade := &http_conn.HttpConnectionManager_UpgradeConfig{UpgradeType: "websocket"}
 		connectionManager.UpgradeConfigs = []*http_conn.HttpConnectionManager_UpgradeConfig{websocketUpgrade}
-		notimeout := 0 * time.Second
+		// notimeout := 0 * time.Second
+		notimeout := envDuration("STREAM_IDLE_TIMEOUT", 0*time.Second)
 		// Setting IdleTimeout to 0 seems to break most tests, causing
 		// envoy to disconnect.
 		// connectionManager.IdleTimeout = &notimeout
