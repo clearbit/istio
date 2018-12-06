@@ -555,6 +555,11 @@ func buildDefaultCluster(env *model.Environment, name string, discoveryType v2.C
 		Name:  name,
 		Type:  discoveryType,
 		Hosts: hosts,
+		UpstreamConnectionOptions: &v2.UpstreamConnectionOptions{
+			TcpKeepalive: &core.TcpKeepalive{
+				KeepaliveTime: &types.UInt32Value{Value: uint32(120)},
+			},
+		},
 	}
 
 	if discoveryType == v2.Cluster_STRICT_DNS || discoveryType == v2.Cluster_LOGICAL_DNS {
