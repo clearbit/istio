@@ -16,7 +16,9 @@ package v1alpha3
 
 import (
 	"fmt"
+	"os"
 	"path"
+	"strconv"
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
@@ -549,6 +551,20 @@ func buildBlackHoleCluster() *v2.Cluster {
 	return cluster
 }
 
+func envInt(env string, def uint32) uint32 {
+	envVal := os.Getenv(env)
+	if envVal == "" {
+		return def
+	}
+
+	i, err := strconv.ParseUint(envVal, 10, 32)
+	if err != nil {
+		log.Warnf("Invalid value %s %s: %v", env, envVal, err)
+		return def
+	}
+	return uint32(i)
+}
+
 func buildDefaultCluster(env *model.Environment, name string, discoveryType v2.Cluster_DiscoveryType,
 	hosts []*core.Address) *v2.Cluster {
 	cluster := &v2.Cluster{
@@ -557,7 +573,9 @@ func buildDefaultCluster(env *model.Environment, name string, discoveryType v2.C
 		Hosts: hosts,
 		UpstreamConnectionOptions: &v2.UpstreamConnectionOptions{
 			TcpKeepalive: &core.TcpKeepalive{
-				KeepaliveTime: &types.UInt32Value{Value: uint32(120)},
+				KeepaliveProbes:   &types.UInt32Value{Value: envInt("UPSTREAM_KEEPALIVE_PROBES", 9)},
+				KeepaliveTime:     &types.UInt32Value{Value: envInt("UPSTREAM_KEEPALIVE_TIME", 15)},
+				KeepaliveInterval: &types.UInt32Value{Value: envInt("UPSTREAM_KEEPALIVE_INTERVAL", 45)},
 			},
 		},
 	}
