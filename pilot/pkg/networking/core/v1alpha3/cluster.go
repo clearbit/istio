@@ -21,7 +21,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	v2_cluster "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
@@ -376,6 +376,13 @@ func applyConnectionPool(cluster *v2.Cluster, settings *networking.ConnectionPoo
 
 	cluster.CircuitBreakers = &v2_cluster.CircuitBreakers{
 		Thresholds: []*v2_cluster.CircuitBreakers_Thresholds{threshold},
+	}
+
+	if val := os.Getenv("HTTP_IDLE_TIMEOUT"); val != "" {
+		dur, err := time.ParseDuration(val)
+		if err == nil {
+			cluster.CommonHttpProtocolOptions = &core.HttpProtocolOptions{IdleTimeout: &dur}
+		}
 	}
 }
 
